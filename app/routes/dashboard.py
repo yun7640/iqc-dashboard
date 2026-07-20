@@ -40,3 +40,9 @@ def index():
 def guide():
     """IQC 대시보드 사용법(공개 페이지). 로그인 없이도 열람 가능."""
     return render_template("guide.html")
+
+
+@bp.route("/tech")
+def tech():
+    """IQC 대시보드 기술문서(공개 페이지). 로그인 없이도 열람 가능."""
+    return render_template("tech.html")
