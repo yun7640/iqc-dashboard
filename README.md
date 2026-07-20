@@ -16,7 +16,7 @@
 
 ## 🌐 온라인 데모 (Railway)
 
-- **데모 주소**: `https://<배포후-도메인>`  *(배포 후 이 자리에 Railway 도메인을 기재)*
+- **데모 주소**: https://iqc-dashboard-production.up.railway.app
 - **데모 계정**: 관리자 `admin` / `admin123` · 정도관리담당 `qc` / `qc123` · 전문의 `dr` / `dr123`
 - 최초 배포 시 데모 데이터가 **자동 적재**되어 별도 설정 없이 바로 로그인·체험할 수 있습니다.
 - 배포 방법은 [`DEPLOY.md`](DEPLOY.md) 참고. (로컬 실행만 원하면 아래 3장으로.)
