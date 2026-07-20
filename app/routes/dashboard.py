@@ -1,6 +1,6 @@
 """대시보드 홈."""
 from flask import Blueprint, render_template
-from flask_login import login_required
+from flask_login import login_required, current_user  # noqa: F401
 
 from ..models import Instrument, MonthlyReview, QcTarget, QcResult, Capa
 from ..services import build_precision_table
@@ -34,3 +34,9 @@ def index():
     open_capa = Capa.query.filter_by(resolved=False).count()
     return render_template("dashboard.html", cards=cards, reviews=reviews,
                            open_capa=open_capa)
+
+
+@bp.route("/guide")
+def guide():
+    """IQC 대시보드 사용법(공개 페이지). 로그인 없이도 열람 가능."""
+    return render_template("guide.html")

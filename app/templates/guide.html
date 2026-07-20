@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}IQC 대시보드 사용법{% endblock %}
+{% block content %}
+<div class="mb-3 d-flex align-items-center justify-content-between flex-wrap">
+  <h3 class="fw-bold mb-0">📖 IQC 대시보드 사용법 <small class="text-muted fs-6">User Guide</small></h3>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('auth.login') }}">← 대시보드로</a>
+</div>
+<p class="text-muted">내부정도관리 종합검토 및 평가(LM-B-05)를 웹에서 확인·검토·전자서명하고 인증 제출용 PDF를 생성하는 프로그램입니다. 환자 식별정보는 저장하지 않고 관리물질 QC 데이터만 취급합니다.</p>
+
+<!-- 1. 접속·로그인 -->
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <h5 class="fw-bold">1. 접속 및 로그인</h5>
+  <ul>
+    <li><b>온라인 데모</b>: <a href="https://iqc-dashboard-production.up.railway.app">https://iqc-dashboard-production.up.railway.app</a></li>
+    <li><b>로컬/인트라넷</b>: 서버 PC 실행 후 <code>http://127.0.0.1:5000</code>, 다른 PC·휴대폰은 <code>http://[서버IP]:5000</code></li>
+  </ul>
+  <table class="table table-sm table-bordered align-middle">
+    <thead class="table-dark"><tr><th>역할</th><th>아이디</th><th>비밀번호</th><th>권한</th></tr></thead>
+    <tbody>
+      <tr><td>관리자</td><td><code>admin</code></td><td><code>admin123</code></td><td>사용자·장비 관리, 보고서 설정 등 전체</td></tr>
+      <tr><td>정도관리담당(임상병리사)</td><td><code>qc</code></td><td><code>qc123</code></td><td>QC 확인, 검토의견·1차 전자서명</td></tr>
+      <tr><td>전문의</td><td><code>dr</code></td><td><code>dr123</code></td><td>검토의견·최종 전자서명(검토완료)</td></tr>
+    </tbody>
+  </table>
+  <p class="small text-muted mb-0">※ 실사용 시 반드시 계정·비밀번호를 교체하세요. 공용 PC에서는 '로그인 유지'를 해제하세요.</p>
+</div></div>
+
+<!-- 2. 메뉴 구성 -->
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <h5 class="fw-bold">2. 화면(메뉴) 구성</h5>
+  <table class="table table-sm table-striped align-middle">
+    <thead><tr><th style="width:22%">메뉴</th><th>기능</th></tr></thead>
+    <tbody>
+      <tr><td>대시보드</td><td>장비별 평가기간·적합률·확인필요·멀티룰 위반 현황, 미완료 CAPA, 검토 이력</td></tr>
+      <tr><td>마스터·데이터연동</td><td>LIS export 파일 업로드 → 검사항목·Lot·목표값·QC 자동 등록</td></tr>
+      <tr><td>QC·L-J차트</td><td>Levey-Jennings 차트, z-score·Westgard 멀티룰 자동판정, 일자별 판정표</td></tr>
+      <tr><td>월별검토·전자서명</td><td>정밀성 종합검토 확인 → 검토의견 → 전자서명 → PDF 다운로드</td></tr>
+      <tr><td>시정조치</td><td>멀티룰 위반 연계 CAPA(원인·조치·재발방지) 기록·관리</td></tr>
+      <tr><td>검토문구</td><td>검토의견 문구 템플릿(담당/전문의별) 등록·관리</td></tr>
+      <tr><td>보고서설정</td><td>문서정보, 정도관리 물질, 장비별 검사항목 배정, 항목 특성별 평가기준</td></tr>
+      <tr><td>감사추적</td><td>로그인·업로드·서명·PDF 생성 등 모든 행위 이력 조회</td></tr>
+      <tr><td>✒ 내 서명</td><td>사인/도장 이미지 등록(휴대폰 촬영 업로드 지원)</td></tr>
+      <tr><td>관리자</td><td>(관리자 전용) 사용자 관리, 평가장비·담당자/전문의 지정</td></tr>
+    </tbody>
+  </table>
+</div></div>
+
+<!-- 3. 기본 흐름 -->
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <h5 class="fw-bold">3. 기본 사용 흐름 (월별 검토 한 바퀴)</h5>
+  <ol>
+    <li>정도관리담당(qc) 로그인 → 대시보드에서 해당 장비·월 현황 확인</li>
+    <li>'마스터·데이터연동'에서 LIS 파일 업로드(신규 데이터가 있을 때)</li>
+    <li>'QC·L-J차트'에서 검사항목별 L-J 차트와 멀티룰 판정 확인</li>
+    <li>이탈(위반)이 있으면 '시정조치'에서 CAPA 등록</li>
+    <li>'월별검토·전자서명'에서 정밀성 종합검토 확인 → 검토의견 작성 → 전자서명(비밀번호 재인증)</li>
+    <li>전문의(dr) 로그인 → 검토의견 작성 → 전자서명 → 상태 '검토완료'</li>
+    <li>'인증 제출용 PDF' 다운로드</li>
+  </ol>
+</div></div>
+
+<!-- 4. 상세 -->
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h5 class="fw-bold">4. 데이터 연동 (LIS 업로드)</h5>
+    <p>LIS에서 내려받은 내부QC 파일을 업로드하면 검사항목·Lot·목표값·일별 QC가 자동 등록됩니다(CSV/.xls, 파일명이 깨져도 헤더로 인식).</p>
+    <ul class="small mb-0">
+      <li>정밀성(월통계) → 월별검토 정밀성 종합검토</li>
+      <li>L-J 일별 → QC·L-J차트</li>
+      <li>일일결과 → 물질별 결과</li>
+    </ul>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h5 class="fw-bold">5. QC·L-J차트 (Westgard 멀티룰)</h5>
+    <p>검사항목·레벨 선택 시 L-J 차트(±1/2/3SD)와 일자별 z-score·판정이 표시됩니다.</p>
+    <ul class="small mb-0">
+      <li>적용 규칙: 1₂ₛ(경고)·1₃ₛ·2₂ₛ·R₄ₛ·4₁ₛ (10ₓ 미적용)</li>
+      <li>L-J 중심선은 CLSI C24 확립평균, 배정값 편차는 (Mean)%Diff로 별도 평가</li>
+    </ul>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h5 class="fw-bold">6. 월별 검토 · 전자서명</h5>
+    <p>서명은 <b>담당 → 전문의</b> 순서로만 가능하며 각 서명은 비밀번호 재인증을 거칩니다. 서명 시점 데이터 무결성 해시(SHA-256)가 저장되어 변조를 탐지합니다.</p>
+    <ol class="small mb-0">
+      <li>정밀성 종합검토표 확인(전월↔당월 Mean·SD·CV, %Diff, 위반, 적합/확인)</li>
+      <li>검토의견 작성(문구 템플릿 선택·삽입) → 저장</li>
+      <li>전자서명 → 비밀번호 재입력 → (담당 서명완료)</li>
+      <li>전문의 로그인 → 검토의견 → 전자서명 → 검토완료 → PDF 다운로드</li>
+    </ol>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h5 class="fw-bold">7. 시정조치 · 서명 이미지</h5>
+    <p class="mb-1"><b>CAPA</b>: 멀티룰 위반 항목에 원인·조치·재발방지를 기록하고 완료 시 해결 처리합니다.</p>
+    <p class="mb-0"><b>내 서명</b>: 흰 종이에 서명 후 촬영 → '내 서명' → 파일 선택 → '흰 배경 투명' 체크 → 등록. 전자서명 시 화면·PDF에 표시됩니다.</p>
+  </div></div></div>
+</div>
+
+<!-- 판정 기준 -->
+<div class="card shadow-sm my-3"><div class="card-body">
+  <h5 class="fw-bold">8. 판정 기준 (적합 / 확인)</h5>
+  <p class="mb-1">아래를 모두 충족하면 <span class="badge bg-success">적합</span>, 하나라도 초과하면 <span class="badge bg-warning text-dark">확인</span>(초과 셀 빨간색 강조):</p>
+  <ul class="mb-0">
+    <li>당월 CV ≤ 그룹 기준(일반 5% / 저농도 10%)</li>
+    <li>|(Mean)%Diff| ≤ 기준(기본 3%)</li>
+    <li>|(CV)Diff| ≤ 기준(기본 3%)</li>
+    <li>일별 멀티룰 거부(reject) 0건</li>
+  </ul>
+</div></div>
+
+<p class="small text-muted">소스코드: <a href="https://github.com/yun7640/iqc-dashboard">github.com/yun7640/iqc-dashboard</a> · 데모 데이터는 익명화되어 있습니다(Lot·성명·서명 가명, 환자정보 미포함).</p>
+{% endblock %}
