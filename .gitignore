@@ -21,3 +21,10 @@ Thumbs.db
 .pytest_cache/
 build/
 dist/
+
+# 내부 데모 정리용 일회성 스크립트(공개 제외)
+rename_users.py
+fix_signatures.py
+anonymize_lots.py
+unsign.py
+clearsign.py

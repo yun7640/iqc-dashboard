@@ -119,10 +119,10 @@ def run_seed(synthetic_only=None):
     if not User.query.first():
         admin = User(username="admin", name="관리자", title="시스템관리자", role="admin")
         admin.set_password("admin123")
-        mgr = User(username="qc", name="김수민", title="임상병리사", role="qc_manager")
+        mgr = User(username="qc", name="최_파트", title="임상병리사", role="qc_manager")
         mgr.set_password("qc123")
         mgr.signature_image = _load_sign("sample_sign_qc.png")
-        path = User(username="dr", name="박준영", title="진단검사의학과 전문의",
+        path = User(username="dr", name="윤_전문", title="진단검사의학과 전문의",
                     role="pathologist")
         path.set_password("dr123")
         path.signature_image = _load_sign("sample_sign_dr.png")
@@ -263,7 +263,7 @@ def run_seed(synthetic_only=None):
                   "— 실제 LIS 데이터가 아니라 워크플로 시연을 위한 가상 이벤트입니다.",
             action="재검 실시, Q.C after ReCAL 수행, new bottle 로 ReRUN",
             prevention="시약 교체 시 QC 재확인 절차를 SOP 에 명문화",
-            created_by="김수민",
+            created_by="최_파트",
             is_demo=True,
         )
         db.session.add(capa)
@@ -344,7 +344,7 @@ def run_seed(synthetic_only=None):
             db.session.add(Instrument(code=code, name=name))
     db.session.commit()
 
-    # FX8-1 장비별 담당자·전문의 지정 (데모: 김수민=담당, 박준영=전문의)
+    # FX8-1 장비별 담당자·전문의 지정 (데모: 최_파트=담당, 윤_전문=전문의)
     inst1 = Instrument.query.filter_by(code="FX8-1").first()
     if inst1 and inst1.manager_id is None:
         mgr = User.query.filter_by(username="qc").first()

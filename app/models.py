@@ -126,7 +126,7 @@ class Lot(db.Model):
     __tablename__ = "lot"
     id = db.Column(db.Integer, primary_key=True)
     material_id = db.Column(db.Integer, db.ForeignKey("control_material.id"))
-    lot_no = db.Column(db.String(40), nullable=False)      # 10341T-5
+    lot_no = db.Column(db.String(40), nullable=False)      # 예: LOT-01
     level = db.Column(db.String(20), nullable=False)       # level1 / level3 / High / Low ...
     expiry_date = db.Column(db.Date)
     __table_args__ = (db.UniqueConstraint("lot_no", "level", name="uq_lot_level"),)

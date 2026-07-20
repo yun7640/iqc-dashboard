@@ -225,7 +225,7 @@ def import_lj_daily(path_or_bytes, filename="", instrument_code="FX8-1"):
 # (C) 물질별 일일결과 export
 # ---------------------------------------------------------------------------
 def import_daily_results(path_or_bytes, filename="", instrument_code="FX8-1",
-                         result_date=None, level="level1", lot_no="10341T-5"):
+                         result_date=None, level="level1", lot_no="LOT-01"):
     """물질별 일일결과 export → 지정 일자 단일 run 결과 적재."""
     rows = _read_rows(path_or_bytes, filename)
     inst = get_or_create_instrument(instrument_code)
