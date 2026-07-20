@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block title %}내부정도관리 종합검토 {{ review.year_month }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h4 class="section-title mb-0">{{ doc_meta.doc_title if doc_meta else '내부정도관리 종합검토 및 평가' }}
+    <small class="text-muted">({{ doc_meta.doc_number if doc_meta else 'LM-B-05' }})</small></h4>
+  <span>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('settings.index') }}">보고서 설정</a>
+    <a class="btn btn-danger" href="{{ url_for('review.pdf', review_id=review.id) }}">📄 인증 제출용 PDF</a>
+  </span>
+</div>
+
+<!-- 문서 머리글 -->
+{% if doc_meta %}
+<table class="table table-sm table-bordered mb-3" style="max-width:640px">
+  <tr><td class="table-prev" style="width:120px"><b>{{ doc_meta.department }}</b></td>
+      <td style="width:90px">문서번호</td><td>{{ doc_meta.doc_number }}</td></tr>
+  <tr><td class="table-prev" rowspan="1"></td><td>제정일시</td><td>{{ doc_meta.established_date }}</td></tr>
+  <tr><td class="table-prev">{{ doc_meta.institution or '' }}</td><td>개정일시</td><td>{{ doc_meta.revised_date }}</td></tr>
+  <tr><td class="table-prev"></td><td>개정사유</td><td>{{ doc_meta.revision_reason }}</td></tr>
+</table>
+{% endif %}
+
+<!-- 진행 단계 -->
+<div class="card mb-3"><div class="card-body d-flex gap-4 flex-wrap">
+  <div class="step done"><span class="dot">1</span> 데이터 연동·판정</div>
+  <div class="step {{ 'done' if signatures.get('qc_manager') else 'active' }}"><span class="dot">2</span> 정도관리담당 검토·서명</div>
+  <div class="step {{ 'done' if signatures.get('pathologist') else ('active' if signatures.get('qc_manager') else '') }}"><span class="dot">3</span> 전문의 검토·서명</div>
+  <div class="step {{ 'done' if review.status=='completed' else '' }}"><span class="dot">✓</span> 검토완료·보관</div>
+</div></div>
+
+<!-- 검사항목 매칭 알림 -->
+{% if match and match.configured and not match.ok %}
+<div class="alert alert-danger">
+  <b>⚠ 검사항목 매칭 불일치</b> — LIS 다운로드 결과와 이 장비({{ inst.code }})에 배정된 검사항목이 일치하지 않습니다. 담당자 확인이 필요합니다.
+  {% if match.missing %}<div class="small mt-1">· <b>결과 누락</b> (배정되었으나 LIS 결과 없음): {{ match.missing|join(', ') }}</div>{% endif %}
+  {% if match.unexpected %}<div class="small">· <b>미설정 항목</b> (LIS 결과는 있으나 장비에 미배정): {{ match.unexpected|join(', ') }}</div>{% endif %}
+  <div class="small mt-1">→ <a href="{{ url_for('settings.analytes', instrument_id=inst.id) }}">평가장비별 검사항목 배정</a> 에서 원인을 확인·수정하세요.</div>
+</div>
+{% elif match and match.configured and match.ok %}
+<div class="alert alert-success small py-2 mb-3">✔ LIS 결과 항목과 장비({{ inst.code }}) 배정 검사항목이 일치합니다 (이상 없음).</div>
+{% endif %}
+
+<!-- 1. 정도관리 현황 -->
+<div class="card mb-3"><div class="card-header">1. 정도관리 현황</div><div class="card-body">
+  <table class="table table-sm table-bordered mb-0 small">
+    <tr>
+      <th class="table-prev" style="width:110px">평가기간</th>
+      <td colspan="3">{{ review.year_month.split('-')[0] }} 년  {{ review.year_month.split('-')[1] }} 월</td>
+    </tr>
+    <tr>
+      <th class="table-prev">평가장비</th>
+      <td colspan="3">
+        {% for n in range(1,5) %}
+          {% set code = 'FX8-' ~ n %}
+          <span class="me-3">{{ '☑' if inst.code==code else '☐' }} TBA FX8 #{{ n }}</span>
+        {% endfor %}
+      </td>
+    </tr>
+    <tr>
+      <th class="table-prev">평가내용</th>
+      <td colspan="3">
+        {% for c in (doc_meta.eval_content_list if doc_meta else ['정밀성 검증','L-J Chart']) %}
+          <span class="me-3">☑ {{ c }}</span>
+        {% endfor %}
+        <span class="text-muted">· {{ summary.total }} 항목·레벨</span>
+      </td>
+    </tr>
+    <tr>
+      <th class="table-prev">평가항목 <span class="badge bg-secondary">{{ inst.code }}</span></th>
+      <td colspan="3">
+        {% if assigned_names %}{{ assigned_names|join(', ') }}
+        <span class="text-muted">({{ assigned_names|length }}종)</span>
+        {% elif doc_meta and doc_meta.analyte_list %}<span style="white-space:pre-line">{{ doc_meta.analyte_list }}</span>
+        {% endif %}
+        <div class="form-text">평가장비별 배정 검사항목과 연동됩니다.
+          <a href="{{ url_for('settings.analytes', instrument_id=inst.id) }}">항목 배정</a></div>
+      </td>
+    </tr>
+  </table>
+</div></div>
+
+<!-- 2. 정도관리 물질 -->
+{% if materials %}
+<div class="card mb-3"><div class="card-header d-flex justify-content-between">
+  <span>2. 정도관리 물질</span>
+  <a class="small" href="{{ url_for('settings.index') }}">물질 선택·관리</a></div>
+  <div class="card-body">
+  <table class="table table-sm table-bordered mb-0 small">
+    <tr><th class="table-prev" style="width:110px">물질명</th>
+      <td>
+        <div class="row">
+        {% for m in materials %}
+          <div class="col-md-6">☑ {{ m.label }}</div>
+        {% endfor %}
+        </div>
+      </td></tr>
+  </table>
+  <div class="form-text">※ '보고서 설정'에서 체크한 물질만 표기됩니다.</div>
+</div></div>
+{% endif %}
+
+<!-- 요약 지표 -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="stat navy"><small>평가 항목·레벨</small><h2>{{ summary.total }}</h2></div></div>
+  <div class="col-6 col-md-3"><div class="stat green"><small>적합</small><h2>{{ summary.total - summary.flagged }}</h2></div></div>
+  <div class="col-6 col-md-3"><div class="stat amber"><small>확인필요</small><h2>{{ summary.flagged }}</h2></div></div>
+  <div class="col-6 col-md-3"><div class="stat red"><small>멀티룰 위반(reject)</small><h2>{{ summary.rejects }}</h2></div></div>
+</div>
+
+<!-- 3. 평가기준 (항목 특성별 그룹) -->
+<div class="card mb-3"><div class="card-header d-flex justify-content-between">
+  <span>3. 분석 평가기준 <small class="text-muted">(항목 특성별)</small></span>
+  <a class="small" href="{{ url_for('settings.criteria') }}">기준·그룹 설정</a></div>
+  <div class="card-body">
+  <table class="table table-sm table-bordered mb-2 small">
+    <thead><tr><th style="width:150px">항목 특성 그룹</th><th>당월 CV</th><th>(Mean) %Diff</th><th>(CV) Diff</th><th>해당 검사항목</th></tr></thead>
+    <tbody>
+    {% for g in crit_groups %}
+      <tr>
+        <td class="table-prev"><b>{{ g.name }}</b></td>
+        <td>≤ {{ g.cv_limit }}%</td>
+        <td>≤ {{ g.mean_diff_limit }}%</td>
+        <td>≤ {{ g.cv_diff_limit }}</td>
+        <td class="small">{{ g.analytes|join(', ') }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="small text-muted">L-J Chart: Westgard 멀티룰(1₂ₛ·1₃ₛ·2₂ₛ·R₄ₛ·4₁ₛ) 자동판정 (10ₓ 미적용) ·
+    판정: 위 기준 및 일별 멀티룰 거부 0건을 모두 충족하면 <span class="badge badge-accept">적합</span>, 아니면 <span class="badge badge-warn">확인</span></div>
+</div></div>
+
+<!-- 정밀성 종합검토 표 (별첨으로 하단에 출력하기 위해 캡처) -->
+{% set precision_table %}
+<div class="card mb-3"><div class="card-header">■ 정밀성 종합검토 결과 (전월 {{ prev_ym }} → 당월 {{ review.year_month }})</div>
+<div class="card-body table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead><tr>
+      <th>검사항목</th><th>Lv</th><th>Lot</th>
+      <th>Target Mean</th><th>Target SD</th>
+      <th class="table-prev">전월 Mean</th><th>당월 Mean</th><th>당월 SD</th>
+      <th class="table-prev">전월 CV</th><th>당월 CV</th>
+      <th>(Mean)%Diff</th><th>(CV)Diff</th><th>위반</th><th>판정</th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr class="{{ 'row-flag' if not r.pass }}">
+        <td>{{ r.analyte }}</td><td>{{ r.level.replace('level','L') }}</td>
+        <td class="small">{{ r.lot_no }}</td>
+        <td>{{ '%.2f'|format(r.target_mean) }}</td>
+        <td>{{ '%.2f'|format(r.target_sd) }}</td>
+        <td class="table-prev">{{ '—' if r.prev_mean is none else '%.2f'|format(r.prev_mean) }}</td>
+        <td>{{ '%.2f'|format(r.cur_mean) }}</td>
+        <td>{{ '%.2f'|format(r.cur_sd) }}</td>
+        <td class="table-prev">{{ '—' if r.prev_cv is none else '%.2f'|format(r.prev_cv) }}%</td>
+        <td class="{{ 'text-danger fw-bold' if r.cur_cv > r.cv_limit }}">{{ r.cur_cv }}%</td>
+        <td class="{{ 'text-danger fw-bold' if r.mean_pct_diff is not none and (r.mean_pct_diff|abs) > r.mean_diff_limit }}">{{ '—' if r.mean_pct_diff is none else '%.2f'|format(r.mean_pct_diff) }}</td>
+        <td class="{{ 'text-danger fw-bold' if r.cv_diff is not none and (r.cv_diff|abs) > r.cv_diff_limit }}">{{ '—' if r.cv_diff is none else '%.2f'|format(r.cv_diff) }}</td>
+        <td>{% if r.n_reject %}<span class="badge badge-reject">{{ r.n_reject }}</span>{% elif r.n_warn %}<span class="badge badge-warn">{{ r.n_warn }}</span>{% else %}—{% endif %}</td>
+        <td>{% if r.pass %}<span class="badge badge-accept">적합</span>{% else %}<span class="badge badge-warn">확인</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endset %}
+
+<div class="alert alert-light border small mb-3 d-flex justify-content-between align-items-center">
+  <span>정밀성 종합검토 결과 표(전월↔당월 비교, 총 {{ rows|length }} 항목·레벨)는
+    <b>문서 하단 〔별첨〕</b> 에 있습니다.</span>
+  <a class="btn btn-sm btn-outline-secondary" href="#appendix-precision">별첨 정밀성 표로 이동 ↓</a>
+</div>
+
+<!-- 멀티룰 위반 & 시정조치 -->
+{% if violations %}
+<div class="card mb-3"><div class="card-header">■ 멀티룰 위반 상세 · 시정조치 연계</div>
+<div class="card-body table-responsive">
+  {% if violations|selectattr('demo')|list %}
+  <div class="alert alert-warning py-2 small mb-2">
+    <b>ⓘ 데모 안내</b> — 아래 <span class="badge bg-warning text-dark">데모</span> 표시 항목은
+    실제 LIS 데이터가 아니라, 멀티룰→시정조치→전자서명 흐름을 시연하기 위해 삽입한 <b>가상 이벤트</b>입니다.
+    실제 정밀성 파일에서 해당 항목은 관리기준 이내였습니다. 실측 QC 파일을 import 하면 실제 위반·조치가 반영됩니다.
+  </div>
+  {% endif %}
+  <table class="table table-sm">
+    <thead><tr><th>검사항목</th><th>Lv</th><th>일자</th><th>측정값</th><th>z</th><th>규칙</th><th>판정</th><th>구분</th><th>시정조치</th></tr></thead>
+    <tbody>
+    {% for v in violations %}
+      <tr class="{{ 'row-flag' if v.status=='reject' }}">
+        <td>{{ v.analyte }}</td><td>{{ v.level.replace('level','L') }}</td>
+        <td>{{ v.date }}</td><td>{{ v.value }}</td><td>{{ v.z }}</td>
+        <td>{% for rr in v.rules.split(',') if rr %}<span class="badge bg-light text-dark" title="{{ rule_info[rr][0] if rr in rule_info }}">{{ rr }}</span> {% endfor %}</td>
+        <td>{% if v.status=='reject' %}<span class="badge badge-reject">거부</span>{% else %}<span class="badge badge-warn">경고</span>{% endif %}</td>
+        <td>{% if v.demo %}<span class="badge bg-warning text-dark">데모</span>{% else %}<span class="badge bg-secondary">실측</span>{% endif %}</td>
+        <td><a class="btn btn-sm btn-outline-danger" href="{{ url_for('capa.new', review_id=review.id) }}">＋CAPA</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endif %}
+
+{% if capas %}
+<div class="card mb-3"><div class="card-header">■ 시정조치(CAPA) 기록</div><div class="card-body">
+  {% for c in capas %}
+  <div class="border rounded p-2 mb-2 small {{ 'border-warning bg-light' if c.is_demo }}">
+    <b>{{ c.analyte_name }}</b> · {{ c.event_summary }}
+    {% if c.is_demo %}<span class="badge bg-warning text-dark">데모 예시</span>{% endif %}
+    {% if c.resolved %}<span class="badge bg-success">완료</span>{% else %}<span class="badge bg-warning text-dark">진행</span>{% endif %}
+    <div>원인: {{ c.cause }}</div><div>조치: {{ c.action }}</div><div>재발방지: {{ c.prevention }}</div>
+    <div class="text-muted">작성 {{ c.created_by }} · {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div>
+  {% endfor %}
+</div></div>
+{% endif %}
+
+<!-- 검토의견 -->
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header d-flex justify-content-between">
+      <span>정도관리담당 검토의견</span>
+      <a class="small" href="{{ url_for('phrase.index') }}">문구 관리</a></div>
+      <div class="card-body">
+      {% if can_mgr and review.status != 'completed' %}
+      <form method="post" action="{{ url_for('review.save_comment', review_id=review.id) }}">
+        <input type="hidden" name="field" value="manager">
+        <div class="input-group input-group-sm mb-2">
+          <label class="input-group-text">문구</label>
+          <select class="form-select" id="tpl-manager">
+            <option value="">— 검토의견 문구 선택 —</option>
+            {% for t in mgr_tpl %}<option value="{{ t.id }}">{{ t.title }}</option>{% endfor %}
+          </select>
+          <button type="button" class="btn btn-outline-secondary" onclick="insertTpl('manager')">삽입</button>
+        </div>
+        <textarea name="text" id="ta-manager" class="form-control mb-2" rows="5">{{ review.manager_comment or '' }}</textarea>
+        <button class="btn btn-sm btn-outline-primary">저장</button>
+      </form>
+      {% else %}<p class="small mb-0" style="white-space:pre-line">{{ review.manager_comment or '— 미작성 —' }}</p>{% endif %}
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header d-flex justify-content-between">
+      <span>전문의 검토의견</span>
+      <a class="small" href="{{ url_for('phrase.index') }}">문구 관리</a></div>
+      <div class="card-body">
+      {% if can_pat and review.status != 'completed' %}
+      <form method="post" action="{{ url_for('review.save_comment', review_id=review.id) }}">
+        <input type="hidden" name="field" value="pathologist">
+        <div class="input-group input-group-sm mb-2">
+          <label class="input-group-text">문구</label>
+          <select class="form-select" id="tpl-pathologist">
+            <option value="">— 검토의견 문구 선택 —</option>
+            {% for t in pat_tpl %}<option value="{{ t.id }}">{{ t.title }}</option>{% endfor %}
+          </select>
+          <button type="button" class="btn btn-outline-secondary" onclick="insertTpl('pathologist')">삽입</button>
+        </div>
+        <textarea name="text" id="ta-pathologist" class="form-control mb-2" rows="5">{{ review.pathologist_comment or '' }}</textarea>
+        <button class="btn btn-sm btn-outline-primary">저장</button>
+      </form>
+      {% else %}<p class="small mb-0" style="white-space:pre-line">{{ review.pathologist_comment or '— 미작성 —' }}</p>{% endif %}
+    </div></div>
+  </div>
+</div>
+
+<!-- 4. 전자서명 -->
+<div class="card mb-3"><div class="card-header">4. 전문의 검토 및 평가 — 전자서명</div><div class="card-body">
+  <div class="row g-3">
+    {% for role, label in [('qc_manager','정도관리담당 / 확인'),('pathologist','전문의 / 검토')] %}
+    {% set s = signatures.get(role) %}
+    {% set assignee = inst.manager if role=='qc_manager' else inst.pathologist %}
+    {% set can_here = can_mgr if role=='qc_manager' else can_pat %}
+    <div class="col-md-6">
+      <div class="sig-box {{ 'signed' if s }}">
+        <div class="d-flex justify-content-between">
+          <b>{{ label }}</b>
+          {% if s %}<span class="badge bg-success">서명완료</span>{% else %}<span class="badge bg-secondary">미서명</span>{% endif %}
+        </div>
+        <div class="small text-muted">지정: {{ assignee.name if assignee else '미지정(해당 역할 누구나)' }}</div>
+        {% if s %}
+          {% if s.signature_image %}
+            <div class="mt-2 mb-1"><img src="{{ s.signature_image }}" alt="서명" style="max-height:56px;max-width:180px;"></div>
+          {% endif %}
+          <div class="mt-1">{{ s.signer_name }} <span class="text-muted">[전자서명]</span></div>
+          <div class="small text-muted">{{ s.signed_at.strftime('%Y-%m-%d %H:%M') }} · {{ s.meaning }}</div>
+          <div class="hash mt-1">무결성해시 {{ s.content_hash[:24] }}…</div>
+        {% else %}
+          {% if can_here %}
+            <button class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#signModal">전자서명</button>
+            {% if role=='pathologist' and not signatures.get('qc_manager') %}
+              <div class="small text-danger mt-1">※ 정도관리담당 서명 후 가능</div>
+            {% endif %}
+          {% else %}
+            <div class="small text-muted mt-2">이 장비의 지정 {{ '담당자' if role=='qc_manager' else '전문의' }}만 서명 가능</div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if integrity_ok is not none %}
+    <div class="alert {{ 'alert-success' if integrity_ok else 'alert-danger' }} mt-3 mb-0 small">
+      {% if integrity_ok %}✔ 서명 시점의 검토대상 데이터 무결성 해시가 현재 데이터와 일치합니다 (변조 없음).
+      {% else %}⚠ 서명 이후 검토대상 데이터가 변경되었습니다 — 무결성 불일치. 재검토·재서명이 필요합니다.{% endif %}
+    </div>
+  {% endif %}
+</div></div>
+
+<!-- 별첨 : 정밀성 종합검토 결과 (서명 다음 하단) -->
+<div id="appendix-precision" class="mb-3">
+  <h5 class="section-title">〔별첨〕 정밀성 종합검토 결과</h5>
+  {{ precision_table|safe }}
+</div>
+
+<!-- 서명 모달 (비밀번호 재인증) -->
+<div class="modal fade" id="signModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="{{ url_for('review.sign', review_id=review.id) }}">
+      <div class="modal-header"><h5 class="modal-title">전자서명 — 비밀번호 재인증</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="small">본인({{ current_user.name }}, {{ current_user.role_label }}) 확인을 위해 비밀번호를 다시 입력합니다.
+          서명 시각·서명자·검토대상 데이터의 무결성 해시가 함께 저장되며 감사추적 로그에 기록됩니다.</p>
+        <input type="password" name="password" class="form-control" placeholder="비밀번호" required autofocus>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+        <button class="btn btn-primary">서명 확정</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TPL = {{ tpl_map|tojson }};
+function insertTpl(field){
+  const sel = document.getElementById('tpl-' + field);
+  const ta = document.getElementById('ta-' + field);
+  if(!sel || !ta) return;
+  const id = sel.value;
+  if(!id || !(id in TPL)) return;
+  const body = TPL[id];
+  ta.value = ta.value.trim() ? (ta.value.replace(/\s+$/,'') + '\n' + body) : body;
+  ta.focus();
+  sel.selectedIndex = 0;
+}
+</script>
+{% endblock %}

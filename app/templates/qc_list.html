@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}QC·L-J차트{% endblock %}
+{% block content %}
+<h4 class="section-title">QC 입력 · Levey-Jennings 차트 · 멀티룰 판정 (4.2)</h4>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-auto">
+    <select name="instrument_id" class="form-select" onchange="this.form.submit()">
+      {% for i in instruments %}
+        <option value="{{ i.id }}" {{ 'selected' if i.id==inst_id }}>{{ i.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <input name="ym" class="form-control" value="{{ ym }}" placeholder="YYYY-MM">
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-primary">조회</button></div>
+  <div class="col-auto"><a class="btn btn-outline-secondary" href="{{ url_for('qc.input_result', instrument_id=inst_id) }}">＋ 일일 QC 수기입력</a></div>
+</form>
+
+<div class="row g-3">
+{% for t in targets %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <b>{{ t.analyte.name }}</b>
+          <span class="text-muted small">{{ t.level }} · {{ t.lot.lot_no if t.lot }}</span>
+        </div>
+        <canvas id="c{{ t.id }}" height="150"></canvas>
+        <div class="d-flex justify-content-between mt-2">
+          <span class="small text-muted" id="s{{ t.id }}">로딩…</span>
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('qc.chart', target_id=t.id, ym=ym) }}">상세</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const YM="{{ ym }}";
+const targets={{ targets|map(attribute='id')|list|tojson }};
+function drawMini(tid){
+  fetch(`{{ url_for('qc.api_series', target_id=0) }}`.replace('/0','/'+tid)+`?ym=${YM}`)
+   .then(r=>r.json()).then(d=>{
+    const m=d.mean, sd=d.sd;
+    const labels=d.points.map(p=>p.date);
+    const vals=d.points.map(p=>p.value);
+    const colors=d.points.map(p=> p.status=='reject'?'#c0392b':p.status=='warning'?'#b8860b':'#2f7fb0');
+    const lim=(k)=>labels.map(()=>m+k*sd);
+    document.getElementById('s'+tid).innerHTML=
+      `n=${d.n} · Mean ${m} · CV ${d.cv}%`;
+    new Chart(document.getElementById('c'+tid),{
+      type:'line',
+      data:{labels,datasets:[
+        {data:vals,borderColor:'#25506f',borderWidth:1.4,pointBackgroundColor:colors,pointRadius:3,tension:.15},
+        {data:lim(3),borderColor:'#e74c3c',borderWidth:1,pointRadius:0,borderDash:[4,3]},
+        {data:lim(2),borderColor:'#f1c40f',borderWidth:1,pointRadius:0,borderDash:[4,3]},
+        {data:lim(-2),borderColor:'#f1c40f',borderWidth:1,pointRadius:0,borderDash:[4,3]},
+        {data:lim(-3),borderColor:'#e74c3c',borderWidth:1,pointRadius:0,borderDash:[4,3]},
+        {data:lim(0),borderColor:'#27ae60',borderWidth:1,pointRadius:0},
+      ]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:8}}},y:{ticks:{font:{size:8}}}}}
+    });
+  });
+}
+targets.forEach(drawMini);
+</script>
+{% endblock %}

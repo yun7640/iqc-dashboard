@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}내 서명 관리{% endblock %}
+{% block content %}
+<h4 class="section-title">내 서명 이미지 관리</h4>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">현재 등록된 서명</div>
+      <div class="card-body">
+        <p class="small text-muted mb-2">
+          {{ current_user.name }} <span class="badge bg-secondary">{{ current_user.role_label }}</span>
+        </p>
+        {% if current_user.signature_image %}
+          <div class="border rounded p-3 text-center bg-white">
+            <img src="{{ current_user.signature_image }}" alt="서명" style="max-height:110px;max-width:100%;">
+          </div>
+          <form method="post" action="{{ url_for('account.clear_signature') }}" class="mt-2">
+            <button class="btn btn-sm btn-outline-danger">서명 이미지 삭제</button>
+          </form>
+        {% else %}
+          <div class="alert alert-light border small mb-0">아직 등록된 서명 이미지가 없습니다.
+            우측에서 사인/도장 이미지를 등록하세요. (미등록 시 전자서명은 이름·시각·해시로 처리됩니다.)</div>
+        {% endif %}
+      </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">서명 이미지 등록</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('account.upload_signature') }}" enctype="multipart/form-data">
+          <div class="mb-2">
+            <label class="form-label">이미지 파일 선택 (사진·스캔·PNG·JPG)</label>
+            <input type="file" name="signature" class="form-control" accept="image/*" required>
+            <div class="form-text">
+              업로드 시 자동으로 <b>회전 보정·크기 축소</b>가 적용됩니다(휴대폰 사진 그대로 올려도 됩니다, 원본 12MB 이하).
+            </div>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="transparent" id="transparent" checked>
+            <label class="form-check-label small" for="transparent">
+              흰 종이 배경을 <b>투명하게</b> 처리 (휴대폰으로 흰 종이에 서명한 사진을 올릴 때 권장)
+            </label>
+          </div>
+          <button class="btn btn-primary">등록</button>
+        </form>
+        <div class="alert alert-light border small mt-3 mb-0">
+          <b>📱 휴대폰 촬영 팁</b>
+          <ol class="mb-0 ps-3">
+            <li>흰 A4용지에 <b>검은색 펜</b>으로 크게 서명(또는 도장)합니다.</li>
+            <li>밝은 곳에서 그림자 없이 서명 부분만 <b>가깝게</b> 촬영합니다.</li>
+            <li>사진을 이 PC로 옮기거나(카톡/메일/USB), 휴대폰 브라우저로 대시보드에 접속해 바로 올립니다.</li>
+            <li>위 파일 선택 → (휴대폰은 '카메라/사진 보관함' 선택) → '흰 배경 투명' 체크 → 등록.</li>
+          </ol>
+        </div>
+        <hr>
+        <p class="small text-muted mb-0">
+          등록한 서명은 본인이 전자서명할 때 <b>서명 시점의 이미지가 그 서명 기록에 함께 저장</b>됩니다.
+          이후 이미지를 바꾸어도 과거에 서명한 문서의 서명 이미지는 그대로 유지됩니다.
+          전자서명의 법적·기록적 효력은 비밀번호 재인증·무결성 해시·감사추적으로 담보되며,
+          이미지는 가독성을 위한 시각 표기입니다.
+        </p>
+      </div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}검토의견 문구 관리{% endblock %}
+{% block content %}
+<h4 class="section-title">검토의견 문구 관리</h4>
+<p class="small text-muted">자주 쓰는 검토의견 문구를 담당자·전문의별로 등록해 두면, 월별 검토 화면의 의견칸에서
+드롭다운으로 선택·삽입한 뒤 상황에 맞게 편집하여 저장할 수 있습니다.</p>
+
+<div class="card mb-3">
+  <div class="card-header">{{ '문구 수정' if edit_item else '새 문구 등록' }}</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('phrase.edit', tid=edit_item.id) if edit_item else url_for('phrase.new') }}" class="row g-2">
+      <div class="col-md-2">
+        <label class="form-label">대상</label>
+        <select name="role" class="form-select">
+          {% for val,label in roles %}
+            <option value="{{ val }}" {{ 'selected' if edit_item and edit_item.role==val }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">제목(짧게)</label>
+        <input name="title" class="form-control" value="{{ edit_item.title if edit_item }}" required>
+      </div>
+      <div class="col-md-1">
+        <label class="form-label">순서</label>
+        <input name="display_order" type="number" class="form-control" value="{{ edit_item.display_order if edit_item else 0 }}">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">문구 내용</label>
+        <textarea name="body" class="form-control" rows="2" required>{{ edit_item.body if edit_item }}</textarea>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">{{ '수정 저장' if edit_item else '등록' }}</button>
+        {% if edit_item %}<a class="btn btn-outline-secondary" href="{{ url_for('phrase.index') }}">취소</a>{% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  {% for label, items in [('정도관리담당', manager), ('전문의', patho)] %}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">{{ label }} 문구 ({{ items|length }})</div>
+      <div class="card-body">
+        {% for t in items %}
+        <div class="border rounded p-2 mb-2">
+          <div class="d-flex justify-content-between">
+            <b class="small">{{ t.title }} <span class="text-muted">#{{ t.display_order }}</span></b>
+            <span>
+              <a class="btn btn-sm btn-outline-primary py-0" href="{{ url_for('phrase.index', edit=t.id) }}">수정</a>
+              <form method="post" action="{{ url_for('phrase.delete', tid=t.id) }}" class="d-inline"
+                    onsubmit="return confirm('이 문구를 삭제할까요?');">
+                <button class="btn btn-sm btn-outline-danger py-0">삭제</button>
+              </form>
+            </span>
+          </div>
+          <div class="small text-muted mt-1">{{ t.body }}</div>
+        </div>
+        {% else %}
+          <p class="small text-muted mb-0">등록된 문구가 없습니다.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

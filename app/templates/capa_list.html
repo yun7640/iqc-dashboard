@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}시정조치{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h4 class="section-title mb-0">시정조치(CAPA) (4.4)</h4>
+  <a class="btn btn-primary" href="{{ url_for('capa.new') }}">＋ 시정조치 등록</a>
+</div>
+<div class="card mt-2"><div class="card-body table-responsive">
+  <table class="table table-hover">
+    <thead><tr><th>등록일</th><th>검사항목</th><th>이상 내역</th><th>조치</th><th>작성자</th><th>상태</th><th></th></tr></thead>
+    <tbody>
+    {% for c in capas %}
+      <tr>
+        <td class="small">{{ c.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>{{ c.analyte_name }}{% if c.is_demo %} <span class="badge bg-warning text-dark">데모</span>{% endif %}</td>
+        <td class="small">{{ c.event_summary }}</td>
+        <td class="small">{{ c.action }}</td>
+        <td>{{ c.created_by }}</td>
+        <td>{% if c.resolved %}<span class="badge bg-success">완료</span>{% else %}<span class="badge bg-warning text-dark">진행</span>{% endif %}</td>
+        <td>{% if not c.resolved %}
+          <form method="post" action="{{ url_for('capa.resolve', capa_id=c.id) }}">
+            <button class="btn btn-sm btn-outline-success">완료처리</button></form>{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="text-muted">등록된 시정조치가 없습니다.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}일일 QC 입력{% endblock %}
+{% block content %}
+<h4 class="section-title">일일 QC 수기 입력</h4>
+<div class="card"><div class="card-body">
+  <form method="post" action="{{ url_for('qc.input_result') }}" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">검사항목 · Level · Lot</label>
+      <select name="target_id" class="form-select" required>
+        {% for t in targets %}
+          <option value="{{ t.id }}">{{ t.analyte.name }} · {{ t.level }} · {{ t.lot.lot_no if t.lot }}
+            (Mean {{ '%.2f'|format(t.target_mean) }}, SD {{ '%.2f'|format(t.target_sd) }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">측정일자</label>
+      <input type="date" name="result_date" class="form-control" value="{{ today }}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">측정값</label>
+      <input type="number" step="any" name="value" class="form-control" required>
+    </div>
+    <div class="col-12"><button class="btn btn-primary">입력 · 자동판정</button></div>
+  </form>
+  <p class="small text-muted mt-3 mb-0">입력 즉시 z-score 산출 및 Westgard 멀티룰 자동판정이 수행되고 L-J 차트에 반영됩니다.</p>
+</div></div>
+{% endblock %}

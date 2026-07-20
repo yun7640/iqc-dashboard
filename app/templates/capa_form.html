@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}시정조치 등록{% endblock %}
+{% block content %}
+<h4 class="section-title">시정조치(CAPA) 등록</h4>
+<div class="card"><div class="card-body">
+  <form method="post" action="{{ url_for('capa.new') }}" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">연계 검토(월/장비)</label>
+      <select name="review_id" class="form-select">
+        <option value="">— 선택 —</option>
+        {% for r in reviews %}
+          <option value="{{ r.id }}" {{ 'selected' if r.id==review_id }}>{{ r.instrument.code }} · {{ r.year_month }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">검사항목</label>
+      <input name="analyte_name" class="form-control" value="{{ prefill.analyte_name or '' }}">
+    </div>
+    <input type="hidden" name="qc_result_id" value="{{ qc_result_id or '' }}">
+    <div class="col-12">
+      <label class="form-label">이상 내역 (이벤트)</label>
+      <input name="event_summary" class="form-control" value="{{ prefill.event_summary or '' }}">
+    </div>
+    <div class="col-md-4"><label class="form-label">원인 분석</label>
+      <textarea name="cause" class="form-control" rows="4"></textarea></div>
+    <div class="col-md-4"><label class="form-label">조치 내용</label>
+      <textarea name="action" class="form-control" rows="4" placeholder="재검 / Q.C after ReCAL / ReRUN(new bottle) / 시약교체 / 장비점검"></textarea></div>
+    <div class="col-md-4"><label class="form-label">재발 방지 대책</label>
+      <textarea name="prevention" class="form-control" rows="4"></textarea></div>
+    <div class="col-12"><button class="btn btn-primary">등록</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('capa.index') }}">취소</a></div>
+  </form>
+</div></div>
+{% endblock %}

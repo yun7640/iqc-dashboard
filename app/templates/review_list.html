@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}월별검토{% endblock %}
+{% block content %}
+<h4 class="section-title">월별 검토 · 전자서명 (4.3)</h4>
+<div class="card"><div class="card-body table-responsive">
+  <table class="table table-hover">
+    <thead><tr><th>평가기간</th><th>장비</th><th>상태</th><th>담당 서명</th><th>전문의 서명</th><th></th></tr></thead>
+    <tbody>
+    {% for r in reviews %}
+      {% set sigs = {} %}
+      {% for s in r.signatures %}{% set _ = sigs.update({s.role: s}) %}{% endfor %}
+      <tr>
+        <td>{{ r.year_month }}</td>
+        <td>{{ r.instrument.code }}</td>
+        <td><span class="badge {{ 'bg-success' if r.status=='completed' else 'bg-info' if r.status=='manager_signed' else 'bg-secondary' }}">{{ r.status_label }}</span></td>
+        <td>{{ sigs.get('qc_manager').signer_name if sigs.get('qc_manager') else '—' }}</td>
+        <td>{{ sigs.get('pathologist').signer_name if sigs.get('pathologist') else '—' }}</td>
+        <td><a class="btn btn-sm btn-primary" href="{{ url_for('review.detail', inst_id=r.instrument_id, ym=r.year_month) }}">열기</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="text-muted">검토 레코드가 없습니다.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

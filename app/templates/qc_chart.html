@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}L-J 차트 상세{% endblock %}
+{% block content %}
+<h4 class="section-title">{{ target.analyte.name }} · {{ target.level }} · L-J Chart ({{ ym }})</h4>
+<a class="btn btn-sm btn-outline-secondary mb-2" href="{{ url_for('qc.index', instrument_id=target.instrument_id, ym=ym) }}">← 목록</a>
+
+<div class="card mb-3"><div class="card-body">
+  <canvas id="chart" height="90"></canvas>
+</div></div>
+
+<div class="card"><div class="card-header">일자별 판정</div>
+<div class="card-body table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th>일자</th><th>측정값</th><th>z-score</th><th>판정</th><th>위반규칙</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const RULEDESC={{ rule_info|tojson }};
+fetch(`{{ url_for('qc.api_series', target_id=target.id) }}?ym={{ ym }}`)
+ .then(r=>r.json()).then(d=>{
+  const m=d.mean,sd=d.sd,labels=d.points.map(p=>p.date),vals=d.points.map(p=>p.value);
+  const colors=d.points.map(p=>p.status=='reject'?'#c0392b':p.status=='warning'?'#b8860b':'#2f7fb0');
+  const lim=k=>labels.map(()=>m+k*sd);
+  new Chart(document.getElementById('chart'),{type:'line',
+    data:{labels,datasets:[
+      {label:'측정값',data:vals,borderColor:'#25506f',pointBackgroundColor:colors,pointRadius:4,tension:.15},
+      {label:'+3SD',data:lim(3),borderColor:'#e74c3c',borderDash:[5,3],pointRadius:0},
+      {label:'+2SD',data:lim(2),borderColor:'#f1c40f',borderDash:[5,3],pointRadius:0},
+      {label:'Mean',data:lim(0),borderColor:'#27ae60',pointRadius:0},
+      {label:'-2SD',data:lim(-2),borderColor:'#f1c40f',borderDash:[5,3],pointRadius:0},
+      {label:'-3SD',data:lim(-3),borderColor:'#e74c3c',borderDash:[5,3],pointRadius:0},
+    ]},options:{plugins:{legend:{position:'bottom'}}}});
+  const tb=document.getElementById('tbody');
+  d.points.forEach(p=>{
+    const badge=p.status=='reject'?'<span class="badge badge-reject">거부</span>':
+      p.status=='warning'?'<span class="badge badge-warn">경고</span>':
+      '<span class="badge badge-accept">적합</span>';
+    const rules=(p.rules||'').split(',').filter(Boolean)
+      .map(r=>`<span class="badge bg-light text-dark" title="${(RULEDESC[r]||[''])[0]}">${r}</span>`).join(' ');
+    tb.insertAdjacentHTML('beforeend',
+      `<tr class="${p.status=='reject'?'row-flag':''}"><td>${p.date}</td><td>${p.value}</td>
+       <td>${p.z}</td><td>${badge}</td><td>${rules}</td></tr>`);
+  });
+});
+</script>
+{% endblock %}

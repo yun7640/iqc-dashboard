@@ -1,0 +1,34 @@
+:root{
+  --navy:#1c3d5a; --navy2:#25506f; --accent:#2f7fb0;
+  --ok:#1e7e34; --warn:#b8860b; --bad:#c0392b; --bg:#f4f6f9;
+}
+body{background:var(--bg); font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; color:#233;}
+.app-nav{background:linear-gradient(90deg,var(--navy),var(--navy2));}
+.brand-sub{font-size:.62rem; font-weight:400; opacity:.75; margin-left:.4rem;}
+.card{border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); border-radius:.6rem;}
+.card-header{background:#fff; border-bottom:2px solid #eef1f5; font-weight:700; color:var(--navy);}
+.stat{border-radius:.6rem; padding:1rem 1.2rem; color:#fff;}
+.stat h2{font-size:1.9rem; margin:0; font-weight:700;}
+.stat small{opacity:.85;}
+.stat.navy{background:linear-gradient(135deg,#2b5876,#4e4376);}
+.stat.green{background:linear-gradient(135deg,#11998e,#38ef7d);}
+.stat.amber{background:linear-gradient(135deg,#f7971e,#ffd200); color:#4a3400;}
+.stat.red{background:linear-gradient(135deg,#cb2d3e,#ef473a);}
+.table thead th{background:var(--navy); color:#fff; font-weight:600; font-size:.82rem; vertical-align:middle;}
+.table td,.table th{font-size:.83rem; vertical-align:middle;}
+.row-flag{background:#fdecea !important;}
+.table-prev{background:#f2f6fa; color:#456;}
+thead th.table-prev{background:#2b4a63;}
+.badge-reject{background:var(--bad);} .badge-warn{background:var(--warn);}
+.badge-accept{background:var(--ok);}
+.step{display:flex; align-items:center; gap:.4rem;}
+.step .dot{width:26px;height:26px;border-radius:50%;background:#ccc;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;}
+.step.done .dot{background:var(--ok);} .step.active .dot{background:var(--accent);}
+.sig-box{border:1px solid #d5dde5; border-radius:.5rem; padding:.8rem 1rem; background:#fbfdff;}
+.sig-box.signed{border-color:#8fd6a6; background:#f2fbf5;}
+.hash{font-family:ui-monospace,monospace; font-size:.72rem; color:#567; word-break:break-all;}
+.login-wrap{max-width:400px; margin:6vh auto;}
+.form-label{font-weight:600; font-size:.85rem;}
+.section-title{color:var(--navy); font-weight:700; border-left:4px solid var(--accent);
+  padding-left:.55rem; margin:1.1rem 0 .6rem;}

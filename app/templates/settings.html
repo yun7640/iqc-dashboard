@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}보고서 설정{% endblock %}
+{% block content %}
+<h4 class="section-title">보고서 설정 — 문서정보 · 정도관리 현황 · 물질</h4>
+<div class="alert alert-light border d-flex justify-content-between align-items-center py-2">
+  <span class="small">평가장비(기기번호)별로 평가할 검사항목을 배정하려면 →</span>
+  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('settings.analytes') }}">평가장비별 검사항목 배정</a>
+</div>
+<div class="alert alert-light border d-flex justify-content-between align-items-center py-2">
+  <span class="small">항목 특성별 정밀성 평가기준((Mean)%Diff·(CV)Diff·CV)을 설정하려면 →</span>
+  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('settings.criteria') }}">항목 특성별 평가기준 설정</a>
+</div>
+
+<!-- 문서 메타 + 현황 -->
+<div class="card mb-3">
+  <div class="card-header">문서 정보 및 정도관리 현황</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('settings.save_meta') }}">
+      <div class="row g-2">
+        <div class="col-md-3"><label class="form-label">문서번호</label>
+          <input name="doc_number" class="form-control" value="{{ meta.doc_number }}"></div>
+        <div class="col-md-3"><label class="form-label">제정일시</label>
+          <input name="established_date" class="form-control" value="{{ meta.established_date }}"></div>
+        <div class="col-md-3"><label class="form-label">개정일시</label>
+          <input name="revised_date" class="form-control" value="{{ meta.revised_date }}"></div>
+        <div class="col-md-3"><label class="form-label">개정사유</label>
+          <input name="revision_reason" class="form-control" value="{{ meta.revision_reason }}"></div>
+
+        <div class="col-md-4"><label class="form-label">부서명</label>
+          <input name="department" class="form-control" value="{{ meta.department }}"></div>
+        <div class="col-md-4"><label class="form-label">기관명(선택)</label>
+          <input name="institution" class="form-control" value="{{ meta.institution or '' }}"></div>
+        <div class="col-md-4"><label class="form-label">문서 제목</label>
+          <input name="doc_title" class="form-control" value="{{ meta.doc_title }}"></div>
+
+        <div class="col-12"><label class="form-label">평가내용 (체크한 항목만 보고서에 표기)</label><br>
+          {% for opt in eval_options %}
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" name="eval_contents" value="{{ opt }}"
+                   id="ec{{ loop.index }}" {{ 'checked' if opt in meta.eval_content_list }}>
+            <label class="form-check-label" for="ec{{ loop.index }}">{{ opt }}</label>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="col-12"><label class="form-label">평가항목 (analyte 목록 본문)</label>
+          <textarea name="analyte_list" class="form-control" rows="4">{{ meta.analyte_list or '' }}</textarea>
+          <div class="form-text">보고서 '1. 정도관리 현황 · 평가항목'에 그대로 표기됩니다.</div>
+        </div>
+        <div class="col-12"><button class="btn btn-primary">저장</button></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 정도관리 물질 선택 -->
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between">
+    <span>정도관리 물질 — 보고서 표기 대상 선택</span>
+    <span class="small text-muted">체크된 물질만 보고서 '2. 정도관리 물질'에 표기</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('settings.material_toggle') }}">
+      <div class="row">
+        {% for m in materials %}
+        <div class="col-md-6">
+          <div class="form-check d-flex justify-content-between align-items-center border-bottom py-1">
+            <span>
+              <input class="form-check-input" type="checkbox" name="selected" value="{{ m.id }}"
+                     id="m{{ m.id }}" {{ 'checked' if m.selected }}>
+              <label class="form-check-label small" for="m{{ m.id }}">{{ m.label }}</label>
+            </span>
+          </div>
+        </div>
+        {% else %}
+          <p class="small text-muted">등록된 물질이 없습니다. 아래에서 추가하세요.</p>
+        {% endfor %}
+      </div>
+      <button class="btn btn-primary btn-sm mt-3">선택 저장</button>
+    </form>
+
+    <hr>
+    <form method="post" action="{{ url_for('settings.material_new') }}" class="row g-2 align-items-end">
+      <div class="col-md-8"><label class="form-label">물질명 추가</label>
+        <input name="label" class="form-control" placeholder="예: Multichem S plus (Assayed) 1, 2, 3 - TDM"></div>
+      <div class="col-md-2"><label class="form-label">순서</label>
+        <input name="display_order" type="number" class="form-control" value="0"></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100">추가</button></div>
+    </form>
+
+    {% if materials %}
+    <div class="mt-3 small">
+      <b>물질 삭제:</b>
+      {% for m in materials %}
+        <form method="post" action="{{ url_for('settings.material_delete', mid=m.id) }}" class="d-inline"
+              onsubmit="return confirm('삭제할까요?');">
+          <button class="btn btn-sm btn-outline-danger py-0 mb-1">{{ m.label[:24] }}… ✕</button>
+        </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

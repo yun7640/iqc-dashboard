@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}평가장비별 검사항목{% endblock %}
+{% block content %}
+<h4 class="section-title">평가장비(기기번호)별 검사항목 배정</h4>
+<p class="small text-muted">장비별로 평가할 검사항목을 선택합니다. 특정 장비에서만 시행하는 항목(#번호 항목 등)은
+해당 장비에만 배정하세요. <b>분석 평가는 장비별로 배정된 검사항목에 대해서만 진행</b>되며,
+LIS 결과와 배정 항목이 불일치하면 월별 검토 화면에 알림이 표시됩니다.</p>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-auto">
+    <select name="instrument_id" class="form-select" onchange="this.form.submit()">
+      {% for i in instruments %}
+        <option value="{{ i.id }}" {{ 'selected' if i.id==inst_id }}>{{ i.name }} ({{ i.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+{% if default_all %}
+<div class="alert alert-info small py-2">이 장비는 아직 검사항목 배정이 없어 <b>전체 항목</b>이 평가 대상입니다.
+필요한 항목만 남기고 저장하세요.</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('settings.analytes_save') }}">
+  <input type="hidden" name="instrument_id" value="{{ inst_id }}">
+  <div class="card"><div class="card-body">
+    <div class="mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAll(true)">전체 선택</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAll(false)">전체 해제</button>
+      <span class="small text-muted ms-2">총 {{ analytes|length }} 항목</span>
+    </div>
+    <div class="row">
+      {% for a in analytes %}
+      <div class="col-md-4 col-lg-3">
+        <div class="form-check">
+          <input class="form-check-input a-chk" type="checkbox" name="analyte" value="{{ a.id }}"
+                 id="a{{ a.id }}"
+                 {{ 'checked' if (default_all or a.id in assigned_set) }}>
+          <label class="form-check-label small" for="a{{ a.id }}">{{ a.name }}</label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary mt-3">배정 저장</button>
+  </div></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+function setAll(v){ document.querySelectorAll('.a-chk').forEach(c=>c.checked=v); }
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}마스터·데이터연동{% endblock %}
+{% block content %}
+<h4 class="section-title">마스터 · LIS 데이터 연동 (4.1)</h4>
+
+<div class="card mb-3">
+  <div class="card-header">LIS export 파일 import</div>
+  <div class="card-body">
+    <p class="small text-muted">검사정보시스템(LIS)에서 내려받은 파일을 그대로 업로드하면 검사항목·Lot·목표값 및 일별 QC 데이터가 자동 등록됩니다. (CSV / .xls 지원)</p>
+    <form method="post" action="{{ url_for('master.import_file') }}" enctype="multipart/form-data" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">파일 유형</label>
+        <select name="kind" class="form-select">
+          <option value="precision">① 정밀성검점 (목표값·검사항목)</option>
+          <option value="lj">② L-J 일별 측정값</option>
+          <option value="daily">③ 물질별 일일결과</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">장비코드</label>
+        <input name="instrument_code" class="form-control" value="FX8-1">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">파일</label>
+        <input type="file" name="file" class="form-control" accept=".csv,.xls,.xlsx" required>
+      </div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">Import</button></div>
+    </form>
+    <div class="small text-muted mt-2">※ <code>sample_data/</code> 폴더에 실제 LIS export 형식의 예시 파일이 포함되어 있습니다.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">등록된 검사항목·목표값 ({{ targets|length }}건)</div>
+  <div class="card-body table-responsive">
+    <table class="table table-sm table-hover">
+      <thead><tr><th>장비</th><th>검사항목</th><th>Level</th><th>Lot No.</th>
+        <th>Target Mean</th><th>Target SD</th><th>Target CV</th><th>저농도</th></tr></thead>
+      <tbody>
+      {% for t in targets %}
+        <tr>
+          <td>{{ t.instrument.code }}</td>
+          <td>{{ t.analyte.name }}</td>
+          <td>{{ t.level }}</td>
+          <td>{{ t.lot.lot_no if t.lot }}</td>
+          <td>{{ '%.2f'|format(t.target_mean) }}</td>
+          <td>{{ '%.2f'|format(t.target_sd) }}</td>
+          <td>{{ t.cv }}%</td>
+          <td>{% if t.analyte.low_concentration %}<span class="badge bg-warning text-dark">≤10%</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
