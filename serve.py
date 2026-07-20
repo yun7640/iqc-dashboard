@@ -29,14 +29,15 @@ def _ensure_seeded():
     별도 CLI 실행 없이 온라인에서 곧바로 로그인·체험이 가능하도록 한다.
     """
     from app import db
-    from app.models import User
+    from app.models import User, Analyte
     with app.app_context():
         db.create_all()
         try:
-            empty = User.query.count() == 0
+            # 계정이 없거나(최초) 데이터가 비어 있으면(부분 시드/파일누락) 시드 실행
+            need = User.query.count() == 0 or Analyte.query.count() == 0
         except Exception:
-            empty = True
-        if empty:
+            need = True
+        if need:
             from app.seed import run_seed
             run_seed()
             print("[init] 데모 시드 자동 적재 완료.")

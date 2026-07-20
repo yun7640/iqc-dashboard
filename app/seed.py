@@ -131,13 +131,20 @@ def run_seed(synthetic_only=None):
 
     # ------------------------------------------------------------ 샘플 파일 식별
     prec_path, lj_path = _classify_samples()
-    if not prec_path:
-        raise FileNotFoundError(
-            "sample_data 폴더에서 정밀성(월통계) 파일을 찾지 못했습니다. "
-            "'Target Mean'·'LOTNO' 헤더를 가진 .xls/.csv 파일이 있는지 확인하세요.")
+    # 파일이 없으면(예: 클라우드 배포에 sample_data 미포함) 내장 데모 데이터 사용
+    if prec_path:
+        prec_source, prec_name = prec_path, prec_path
+    else:
+        from .seed_data import precision_bytes
+        prec_source, prec_name = precision_bytes(), "precision.csv"
+    if lj_path:
+        lj_source, lj_name = lj_path, lj_path
+    else:
+        from .seed_data import lj_bytes
+        lj_source, lj_name = lj_bytes(), "lj.csv"
 
     # ------------------------------------------------------------ 마스터/목표값
-    importers.import_precision(prec_path, filename=prec_path,
+    importers.import_precision(prec_source, filename=prec_name,
                                instrument_code="FX8-1",
                                instrument_name="TBA FX8 #1",
                                year_month=CUR_YM)
@@ -145,7 +152,7 @@ def run_seed(synthetic_only=None):
 
     # ------------------------------------------------------------ 합성 일별 시계열
     # 정밀성 파일에서 당월/전월 통계 파라미터를 읽어 시계열 재현
-    rows = importers._read_rows(prec_path, filename=prec_path)
+    rows = importers._read_rows(prec_source, filename=prec_name)
     cur_dates = _weekday_dates(2026, 6, 22)
     prev_dates = _weekday_dates(2026, 5, 22)
 
@@ -187,7 +194,7 @@ def run_seed(synthetic_only=None):
     db.session.commit()
 
     # ------------------------------------------------------------ 실제 Glucose L-J
-    if not synthetic_only and lj_path and os.path.exists(lj_path):
+    if not synthetic_only and lj_source is not None:
         # 기존 합성 Glucose 6월 데이터 삭제 후 실데이터로 대체
         glu = Analyte.query.filter_by(name="Glucose").first()
         if glu:
@@ -200,7 +207,7 @@ def run_seed(synthetic_only=None):
                     db.extract("month", QcResult.result_date) == 6,
                 ).delete(synchronize_session=False)
             db.session.commit()
-            importers.import_lj_daily(lj_path, filename=lj_path,
+            importers.import_lj_daily(lj_source, filename=lj_name,
                                       instrument_code="FX8-1")
             # 실측 Glucose: 운영중심선 = 당월 관측평균, 관리 SD = 배정 SD
             from statistics import mean as _m
